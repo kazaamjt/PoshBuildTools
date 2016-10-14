@@ -23,3 +23,5 @@ You can now use the Visual Studio Commands yourself or use the commands provided
 
 To change the target system, you will have to edit vcvarsall so that it defaults to your target system.  
      (Default is x86. Also note that the vcvarsall File is marked as readonly by default)
+
+The Microsoft.PowerShell_profile.ps1 File is an example of what your PS profile could be.
