@@ -13,12 +13,20 @@ function Get-BatchFile ($file) {
 .Synopsis
    Compiles a C or C++ file
 #>
-function Compile-SourceFile{
+function Start-CompilingFromSource{
     param(
+        [Alias("Build")]
         [cmdletbinding()]
         [parameter(mandatory=$true)] $Source,
         [parameter(mandatory=$false)] $OutputFolder,
         [parameter(mandatory=$false)] $Link,
+
+        [parameter(mandatory=$false)]
+        [ValidateSet('ARM','EBC','X64','X86')] $TargetPlatform,
+
+        # Args shoudl takes a string as argument, any cl paraemeter will work in this.
+        # Example: "/CGTHREADS:4 /INTEGRITYCHECK"
+        [parameter(mandatory=$false)] $Args,
         [switch] $CreateDebugObjects
     )
 
@@ -31,22 +39,27 @@ function Compile-SourceFile{
             Push-Location $AbsolutePathOutput
         }
 
+        if ($TargetPlatform){
+            $TargetPlatformParams = "/MACHINE:$TargetPlatform"
+        }
+
         if ($CreateDebugObjects){
             $DebugParams = '-Zi'
         }
         # output created command
-        Write-Verbose "Running the following command: cl $DebugParams $Source $Link"
+        Write-Verbose "Running the following command: cl $DebugParams $Source $Link $TargetPlatformParams"
         if ($OutputFolder -ne $null){
             Write-Verbose "Placing binaries in: $AbsolutePathOutput"
         }
 
-        cl $DebugParams $AbsolutePathSource $Link
+        cl $DebugParams $AbsolutePathSource $Link $TargetPlatformParams $Args
         Pop-Location
     }
 }
 
 function Debug-Binary{
     param(
+        [Alias("Debug")]
         [parameter(mandatory=$true)] $Path
     )
 

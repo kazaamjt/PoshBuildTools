@@ -4,8 +4,8 @@ This PowerShell module imports and enables compiling with the visual studio comm
     (This didn't exist for whatever reason, I looked long and hard. Maybe not hard enough. Sue me.)
 
 Includes:
- - Building
- - Debugging
+ - Building  (Start-CompilingFromSource | Alias: Build)
+ - Debugging (Debug-Binairy | Alias: Debug)
 
 Based on some code orignaly found here:
 https://filebox.ece.vt.edu/~ece1574/spring15/devenvinstall.html
@@ -21,7 +21,7 @@ run get-Batchfile():
 	
 You can now use the Visual Studio Commands yourself or use the commands provided by the module.
 
-To change the target system, you will have to edit vcvarsall so that it defaults to your target system.  
-     (Default is x86. Also note that the vcvarsall File is marked as readonly by default)
+To change the default target system, you will have to edit vcvarsall or linker object files so that it defaults to your target system.
+	(Default in vcvarsall is x86. Also note that the vcvarsall File is marked as readonly by default)
 
 The Microsoft.PowerShell_profile.ps1 File is an example of what your PS profile could be.
