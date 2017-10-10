@@ -19,7 +19,8 @@ Import the module (in your PS profile or in a session)
 run get-Batchfile():  
 	`Get-BatchFile('C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat')`
 
-!For Visual studio 2017 the vcvars scripts are located at "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\" by default.
+For Visual studio 2017 the vcvars scripts are located at 
+"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\" by default.
 	
 You can now use the Visual Studio Commands yourself or use the commands provided by the module.
 
