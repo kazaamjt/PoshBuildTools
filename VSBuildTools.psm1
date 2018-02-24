@@ -28,6 +28,70 @@ function Get-VisualStudio {
             $VS | Add-Member -Name ($SplitLine[0].trim()) -MemberType Noteproperty -Value ($SplitLine[1].trim())
         }
     }
+
+    return $VS
+}
+
+function Enable-VSBuildTools{
+    param(
+        [parameter(mandatory=$false)]
+        [ValidateSet('x86', 'amd64', 'arm', 'arm64')]
+        $OutputArchitecture,
+
+        [parameter(mandatory=$false)]
+        [ValidateSet('x86', 'amd64')]
+        $Compiler
+    )
+
+    process
+    {
+        $VS = Get-VisualStudio
+        $VCPath = $VS.installationPath + '\VC\Auxiliary\Build\'
+        switch ($OutputArchitecture){
+            'x86'{
+                if ($Compiler -eq 'amd64'){
+                    $Bat = "vcvarsamd64_x86.bat"
+                }  else {
+                    $Bat = "vcvars32.bat"
+                }
+                break
+            }
+            'amd64'{
+                if ($Compiler -eq 'amd64'){
+                    $Bat = "vcvars64.bat"
+                }  else {
+                    $Bat = "vcvarsx86_amd64.bat"
+                }
+                break
+            }
+            'arm'{
+                if ($Compiler -eq 'amd64'){
+                    $Bat = "vcvarsamd64_arm.bat"
+                }  else {
+                    $Bat = "vcvarsx86_arm.bat"
+                }
+                break
+            }
+            'arm64'{
+                if ($Compiler -eq 'amd64'){
+                    $Bat = "vcvarsamd64_arm64.bat"
+                }  else {
+                    $Bat = "vcvarsx86_arm64.bat"
+                }
+                break
+            }
+            default {
+                switch ($Compiler){
+                    "x86" { }
+                    "amd64" { }
+                    default { $Bat = "vcvarsall.bat"; break }
+                }
+                break
+            }
+        }
+
+        Invoke-BatchFile -file ($VCPath + $Bat)
+    }
 }
 
 <#
@@ -91,5 +155,6 @@ function Debug-Binary {
 
 # Only export usefull functions
 Export-ModuleMember Get-VisualStudio
+Export-ModuleMember Enable-VSBuildTools
 Export-ModuleMember New-Binary
 Export-ModuleMember Debug-Binary
