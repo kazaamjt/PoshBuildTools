@@ -11,6 +11,7 @@ function Get-BatchFile ($file) {
 }
 
 # Use VSWHERE to find VSVersion and return it as a PS object
+# Use VSWHERE to find VSVersion and return it's output as a PS object
 function Get-VisualStudio {
     $VS = New-Object -TypeName PSObject
 
@@ -80,7 +81,6 @@ function New-Binary {
 
 function Debug-Binary {
     param(
-        [Alias("Debug")]
         [parameter(mandatory=$true)] $Path
     )
 
