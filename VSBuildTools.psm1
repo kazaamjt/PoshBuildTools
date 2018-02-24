@@ -1,4 +1,5 @@
-# Function to link CL to PS
+# Function to enable cl.exe in PowerShell
+# Basicly turns all the environment variables from the CMD format to the PS "env:"-format.
 function Get-BatchFile ($file) {
     $cmd = "`"$file`" & set"
     cmd /c $cmd | Foreach-Object {
@@ -11,9 +12,9 @@ function Get-BatchFile ($file) {
 
 <#
 .Synopsis
-   Compiles a C or C++ file
+   Compiles a C or visual C++ file using cl.exe.
 #>
-function Start-CompilingFromSource{
+function New-Binary {
     param(
         [Alias("Build")]
         [cmdletbinding()]
@@ -24,7 +25,7 @@ function Start-CompilingFromSource{
         [parameter(mandatory=$false)]
         [ValidateSet('ARM','EBC','X64','X86')] $TargetPlatform,
 
-        # Args shoudl takes a string as argument, any cl paraemeter will work in this.
+        # Args should takes a string as argument, any cl parameter will work with this param. (Even multiple)
         # Example: "/CGTHREADS:4 /INTEGRITYCHECK"
         [parameter(mandatory=$false)] $Args,
         [switch] $CreateDebugObjects
@@ -57,7 +58,7 @@ function Start-CompilingFromSource{
     }
 }
 
-function Debug-Binary{
+function Debug-Binary {
     param(
         [Alias("Debug")]
         [parameter(mandatory=$true)] $Path
