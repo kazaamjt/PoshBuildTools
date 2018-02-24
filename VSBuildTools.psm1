@@ -36,7 +36,6 @@ function Get-VisualStudio {
 #>
 function New-Binary {
     param(
-        [Alias("Build")]
         [cmdletbinding()]
         [parameter(mandatory=$true)] $Source,
         [parameter(mandatory=$false)] $OutputFolder,
@@ -53,6 +52,7 @@ function New-Binary {
 
     process
     {
+        if (!(Test-Path $Source -ErrorAction SilentlyContinue)) {throw "No such file."}
         $AbsolutePathSource = (Resolve-Path $Source).Path
         
         if ($OutputFolder -ne $null){
