@@ -10,6 +10,26 @@ function Get-BatchFile ($file) {
     }
 }
 
+# Use VSWHERE to find VSVersion and return it as a PS object
+function Get-VisualStudio {
+    $VS = New-Object -TypeName PSObject
+
+    $VSWHERE = . "$PSScriptRoot\VSWHERE.exe"
+    $VSWHERE[0] = ''
+    $VSWHERE[1] = ''
+
+    foreach ($Line in $VSWHERE){
+        if ($Line) {
+            $SplitLine = $Line.split(':')
+            if ($SplitLine[0] -eq 'installationPath'){
+                $SplitLine[1] += ':'
+                $SplitLine[1] += $SplitLine[2]
+            }
+            $VS | Add-Member -Name ($SplitLine[0].trim()) -MemberType Noteproperty -Value ($SplitLine[1].trim())
+        }
+    }
+}
+
 <#
 .Synopsis
    Compiles a C or visual C++ file using cl.exe.
@@ -71,5 +91,6 @@ function Debug-Binary {
 }
 
 # Only export usefull functions
+Export-ModuleMember Get-VisualStudio
 Export-ModuleMember New-Binary
 Export-ModuleMember Debug-Binary
