@@ -1,6 +1,6 @@
 # Function to enable cl.exe in PowerShell
 # Basicly turns all the environment variables from the CMD format to the PS "env:"-format.
-function Get-BatchFile ($file) {
+function Invoke-BatchFile ($file) {
     $cmd = "`"$file`" & set"
     cmd /c $cmd | Foreach-Object {
         $p, $v = $_.split('=')
@@ -10,7 +10,6 @@ function Get-BatchFile ($file) {
     }
 }
 
-# Use VSWHERE to find VSVersion and return it as a PS object
 # Use VSWHERE to find VSVersion and return it's output as a PS object
 function Get-VisualStudio {
     $VS = New-Object -TypeName PSObject
