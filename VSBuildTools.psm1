@@ -69,3 +69,7 @@ function Debug-Binary {
         devenv $Path
     }
 }
+
+# Only export usefull functions
+Export-ModuleMember New-Binary
+Export-ModuleMember Debug-Binary
