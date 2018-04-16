@@ -104,6 +104,7 @@ function New-Binary {
         [parameter(mandatory=$true)] $Source,
         [parameter(mandatory=$false)] $OutputFolder,
         [parameter(mandatory=$false)] $Link,
+        [parameter(mandatory=$false)] $Include,
 
         [parameter(mandatory=$false)]
         [ValidateSet('ARM','EBC','X64','X86')] $TargetPlatform,
@@ -131,13 +132,19 @@ function New-Binary {
         if ($CreateDebugObjects){
             $DebugParams = '-Zi'
         }
+
+        if ($Include) {
+            foreach ($Dir in $Include) {
+                $IncludeParams += "/I $Dir "
+            }
+        }
         # output created command
         Write-Verbose "Running the following command: cl $DebugParams $Source $Link $TargetPlatformParams"
         if ($OutputFolder -ne $null){
             Write-Verbose "Placing binaries in: $AbsolutePathOutput"
         }
 
-        cl $DebugParams $AbsolutePathSource $Link $TargetPlatformParams $Args
+        cl $DebugParams $AbsolutePathSource $Link $TargetPlatformParams $IncludeParams $Args
         Pop-Location
     }
 }
