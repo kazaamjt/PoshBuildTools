@@ -101,50 +101,62 @@ function Enable-VSBuildTools{
 function New-Binary {
     param(
         [cmdletbinding()]
-        [parameter(mandatory=$true)] $Source,
-        [parameter(mandatory=$false)] $OutputFolder,
-        [parameter(mandatory=$false)] $Link,
-        [parameter(mandatory=$false)] $Include,
+        [parameter(mandatory=$true)] [string]$Source,
+        # [parameter(mandatory=$false)] [string]$OutputFolder,
+        [parameter(mandatory=$false)] [string]$Link,
+        [parameter(mandatory=$false)] [string]$Include,
+        [parameter(mandatory=$false)] [string]$Libraries,
 
         [parameter(mandatory=$false)]
         [ValidateSet('ARM','EBC','X64','X86')] $TargetPlatform,
 
         # Args should takes a string as argument, any cl parameter will work with this param. (Even multiple)
         # Example: "/CGTHREADS:4 /INTEGRITYCHECK"
-        [parameter(mandatory=$false)] $Args,
+        [parameter(mandatory=$false)] [string]$Args,
         [switch] $CreateDebugObjects
     )
 
     process
     {
-        if (!(Test-Path $Source -ErrorAction SilentlyContinue)) {throw "No such file."}
+        if (!(Test-Path $Source -ErrorAction SilentlyContinue)) {throw "No such file: $Source"}
         $AbsolutePathSource = (Resolve-Path $Source).Path
-        
-        if ($OutputFolder -ne $null){
-            $AbsolutePathOutput = Resolve-Path $OutputFolder
-            Push-Location $AbsolutePathOutput
+        $Source = Split-Path $AbsolutePathSource -Leaf
+
+        $CMD = "cl $Source"
+
+        if ($Libraries) {
+            foreach ($lib in $Libraries) {
+                $CMD += " $lib"
+            }
         }
 
-        if ($TargetPlatform){
-            $TargetPlatformParams = "/MACHINE:$TargetPlatform"
+        if ($TargetPlatform) {
+            $CMD += " /MACHINE:$TargetPlatform"
         }
 
-        if ($CreateDebugObjects){
-            $DebugParams = '-Zi'
+        if ($CreateDebugObjects) {
+            $CMD += ' -Zi'
         }
 
         if ($Include) {
             foreach ($Dir in $Include) {
-                $IncludeParams += "/I $Dir "
+                $CMD += " /I $Dir"
             }
         }
-        # output created command
-        Write-Verbose "Running the following command: cl $DebugParams $Source $Link $TargetPlatformParams"
-        if ($OutputFolder -ne $null){
-            Write-Verbose "Placing binaries in: $AbsolutePathOutput"
+
+        if ($Args) {
+            $CMD += " $Args"
         }
 
-        cl $DebugParams $AbsolutePathSource $Link $TargetPlatformParams $IncludeParams $Args
+        # if ($OutputFolder) {
+        #     $AbsolutePathOutput = Resolve-Path $OutputFolder
+        #     $CMD += " /Fo`'$AbsolutePathOutput`'"
+        # }
+
+        # output created command
+        Push-Location -Path (Split-Path $AbsolutePathSource -Parent)
+        Write-Verbose "Running the following command: $CMD"
+        Invoke-Expression $CMD
         Pop-Location
     }
 }

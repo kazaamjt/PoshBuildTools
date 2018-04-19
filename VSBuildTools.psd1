@@ -12,7 +12,7 @@
 # RootModule = 'VSBuildTools.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0'
+ModuleVersion = '1.1'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -27,10 +27,10 @@ Author = 'Yaron Vanhulst'
 Copyright = '(c) 2018 Yaron Vanhulst. All rights reserved.'
 
 # Description of the functionality provided by this module
-# Description = 'Enables to compile and debug files from the PowerShell'
+Description = 'Enables to compile and debug files from the PowerShell'
 
 # Minimum version of the Windows PowerShell engine required by this module
-# PowerShellVersion = '3'
+PowerShellVersion = '3'
 
 # Name of the Windows PowerShell host required by this module
 # PowerShellHostName = ''
