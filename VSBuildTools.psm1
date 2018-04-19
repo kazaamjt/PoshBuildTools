@@ -102,7 +102,7 @@ function New-Binary {
     param(
         [cmdletbinding()]
         [parameter(mandatory=$true)] [string]$Source,
-        # [parameter(mandatory=$false)] [string]$OutputFolder,
+        [parameter(mandatory=$false)] [string]$OutputFolder,
         [parameter(mandatory=$false)] [string]$Link,
         [parameter(mandatory=$false)] [string]$Include,
         [parameter(mandatory=$false)] [string]$Libraries,
@@ -148,10 +148,11 @@ function New-Binary {
             $CMD += " $Args"
         }
 
-        # if ($OutputFolder) {
-        #     $AbsolutePathOutput = Resolve-Path $OutputFolder
-        #     $CMD += " /Fo`'$AbsolutePathOutput`'"
-        # }
+        if ($OutputFolder) {
+            $AbsolutePathOutput = Resolve-Path $OutputFolder
+            $ExeName = [io.path]::GetFileNameWithoutExtension($Source) + ".exe"
+            $CMD += " /Fo`'$AbsolutePathOutput\`' /link /OUT:`'$AbsolutePathOutput\$ExeName`'"
+        }
 
         # output created command
         Push-Location -Path (Split-Path $AbsolutePathSource -Parent)
