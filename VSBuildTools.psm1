@@ -147,7 +147,7 @@ function New-Binary {
 
         if ($Libraries) {
             foreach ($lib in $Libraries) {
-                $CMD += " $lib"
+                $CMD += " `"$lib`""
             }
         }
 
@@ -161,7 +161,7 @@ function New-Binary {
 
         if ($Include) {
             foreach ($Dir in $Include) {
-                $CMD += " /I $Dir"
+                $CMD += " /I `"$Dir\`""
             }
         }
 
