@@ -97,32 +97,53 @@ function Enable-VSBuildTools{
 <#
 .Synopsis
    Compiles a C or visual C++ file using cl.exe.
+   Linking functionality now included!
 #>
 function New-Binary {
     param(
         [cmdletbinding()]
-        [parameter(mandatory=$true)] [string]$Source,
+        [parameter(mandatory=$true, position=0)] [string]$Source,
+
+        # Make sure this includes '.exe'.
+        # Defaults to using the same name the source file has.
+        [parameter(mandatory=$false)] [string]$BinaryName,
+
+        # The folder where the bin and obj folders will be created.
+        # Defaults to using the folder of the source file.
         [parameter(mandatory=$false)] [string]$OutputFolder,
-        [parameter(mandatory=$false)] [string]$Link,
+
+        # Folder where the binaries will be placed. Is created if it does not exist.
+        # It's full path is $OutputFolder\$BinarydFolderName.
+        [parameter(mandatory=$false)] [string]$BinaryFolderName="bin",
+
+        # Folder where the objects will be placed. Is created if it does not exist.
+        # It's full path is $OutputFolder\$ObjectFolderName.
+        [parameter(mandatory=$false)] [string]$ObjectFolderName="obj",
         [parameter(mandatory=$false)] [string]$Include,
         [parameter(mandatory=$false)] [string]$Libraries,
+        [switch] $CreateDebugObjects,
 
         [parameter(mandatory=$false)]
         [ValidateSet('ARM','EBC','X64','X86')] $TargetPlatform,
 
         # Args should takes a string as argument, any cl parameter will work with this param. (Even multiple)
+        # These arguments will be Added BEFORE the /LINK block. (If /LINK is used at all)
         # Example: "/CGTHREADS:4 /INTEGRITYCHECK"
-        [parameter(mandatory=$false)] [string]$Args,
-        [switch] $CreateDebugObjects
+        [parameter(mandatory=$false)] [string]$CompilerArgs,
+
+        # Works in the same way as $CompilerArgs.
+        # These parameters will be passed after the /LINK parameter.
+        [parameter(mandatory=$false)] [string]$LinkerArgs
     )
 
     process
     {
         if (!(Test-Path $Source -ErrorAction SilentlyContinue)) {throw "No such file: $Source"}
         $AbsolutePathSource = (Resolve-Path $Source).Path
-        $Source = Split-Path $AbsolutePathSource -Leaf
+        $SourceName = Split-Path $AbsolutePathSource -Leaf
+        $SourceDir = Split-Path $AbsolutePathSource -Parent
 
-        $CMD = "cl $Source"
+        $CMD = "cl $SourceName"
 
         if ($Libraries) {
             foreach ($lib in $Libraries) {
@@ -144,18 +165,47 @@ function New-Binary {
             }
         }
 
-        if ($Args) {
-            $CMD += " $Args"
+        if (!$OutputFolder) {
+            $OutputFolder = $SourceDir
         }
 
-        if ($OutputFolder) {
-            $AbsolutePathOutput = Resolve-Path $OutputFolder
-            $ExeName = [io.path]::GetFileNameWithoutExtension($Source) + ".exe"
-            $CMD += " /Fo`'$AbsolutePathOutput\`' /link /OUT:`'$AbsolutePathOutput\$ExeName`'"
+        if (!(Test-Path $OutputFolder)) {
+            New-Item $OutputFolder -ItemType Directory -Force
+        }
+
+        $AbsoluteOutputPath = (Resolve-Path $OutputFolder).Path
+        $AbsoluteObjOutputPath = $AbsoluteOutputPath + "\" + ($ObjectFolderName.Replace("\","")) + "\"
+        $AbsoluteBinOutputPath = $AbsoluteOutputPath + "\" + ($BinaryFolderName.Replace("\","")) + "\"
+
+        if (!(Test-Path $AbsoluteObjOutputPath)) {
+            New-Item $AbsoluteObjOutputPath -ItemType Directory -Force
+        }
+
+        $CMD += " /Fo`"$AbsoluteObjOutputPath\`""
+
+        if ($CompilerArgs) {
+            $CMD += " $CompilerArgs"
+        }
+
+        # Linker args
+        $CMD += " /link"
+
+        if (!(Test-Path $AbsoluteBinOutputPath)) {
+            New-Item $AbsoluteBinOutputPath -ItemType Directory -Force
+        }
+
+        if (!$BinaryName) {
+            $BinaryName = [io.path]::GetFileNameWithoutExtension($SourceName) + ".exe"
+        }
+
+        $CMD += " /OUT:`"$AbsoluteBinOutputPath$BinaryName\`""
+
+        if ($LinkerArgs) {
+            $CMD += " " + $LinkerArgs
         }
 
         # output created command
-        Push-Location -Path (Split-Path $AbsolutePathSource -Parent)
+        Push-Location -Path $SourceDir
         Write-Verbose "Running the following command: $CMD"
         Invoke-Expression $CMD
         Pop-Location
