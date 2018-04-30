@@ -126,6 +126,10 @@ function New-Binary {
         [parameter(mandatory=$false)]
         [ValidateSet('ARM','EBC','X64','X86')] $TargetPlatform,
 
+        # Makes a DLL instead of an exe.
+        [parameter(mandatory=$false)]
+        [switch]$DLL,
+
         # Args should takes a string as argument, any cl parameter will work with this param. (Even multiple)
         # These arguments will be Added BEFORE the /LINK block. (If /LINK is used at all)
         # Example: "/CGTHREADS:4 /INTEGRITYCHECK"
@@ -195,7 +199,16 @@ function New-Binary {
         }
 
         if (!$BinaryName) {
-            $BinaryName = [io.path]::GetFileNameWithoutExtension($SourceName) + ".exe"
+            $BinaryName = [io.path]::GetFileNameWithoutExtension($SourceName)
+            if ($DLL) {
+                $BinaryName += ".dll"
+            } else {
+                $BinaryName += ".exe"
+            }
+        }
+
+        if ($DLL) {
+            $CMD += " /DLL"
         }
 
         $CMD += " /OUT:`"$AbsoluteBinOutputPath$BinaryName`""
