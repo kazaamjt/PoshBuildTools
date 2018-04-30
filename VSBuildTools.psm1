@@ -198,7 +198,7 @@ function New-Binary {
             $BinaryName = [io.path]::GetFileNameWithoutExtension($SourceName) + ".exe"
         }
 
-        $CMD += " /OUT:`"$AbsoluteBinOutputPath$BinaryName\`""
+        $CMD += " /OUT:`"$AbsoluteBinOutputPath$BinaryName`""
 
         if ($LinkerArgs) {
             $CMD += " " + $LinkerArgs
