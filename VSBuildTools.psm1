@@ -104,23 +104,18 @@ function New-Binary {
         [cmdletbinding()]
         [parameter(mandatory=$true, position=0)] [string]$Source,
 
-        # Make sure this includes '.exe'.
-        # Defaults to using the same name the source file has.
+        # Wrapper for /Fe option or the linkers /OUT param if linker option are use.
+        # Accepts either a path or a name.
         [parameter(mandatory=$false)] [string]$BinaryName,
 
-        # The folder where the bin and obj folders will be created.
-        # Defaults to using the folder of the source file.
-        [parameter(mandatory=$false)] [string]$OutputFolder,
+        # Wrapper for /Fo option, setting a path or naming the Objects.
+        [parameter(mandatory=$false)] [string]$ObjectName,
 
-        # Folder where the binaries will be placed. Is created if it does not exist.
-        # It's full path is $OutputFolder\$BinarydFolderName.
-        [parameter(mandatory=$false)] [string]$BinaryFolderName="bin",
+        # Takes a list of strings as input. Wrapper for the /I cl-parameter.
+        [parameter(mandatory=$false)] [string[]]$Include,
 
-        # Folder where the objects will be placed. Is created if it does not exist.
-        # It's full path is $OutputFolder\$ObjectFolderName.
-        [parameter(mandatory=$false)] [string]$ObjectFolderName="obj",
-        [parameter(mandatory=$false)] [string]$Include,
-        [parameter(mandatory=$false)] [string]$Libraries,
+        # Takes a list of .lib files.
+        [parameter(mandatory=$false)] [string[]]$Libraries,
         [switch] $CreateDebugObjects,
 
         [parameter(mandatory=$false)]
@@ -130,11 +125,11 @@ function New-Binary {
         [parameter(mandatory=$false)]
         [switch]$DLL,
 
-        # Args should takes a string as argument, any cl parameter will work with this param. (Even multiple)
+        # Args takes a string as argument, any cl parameter will work with this param. (Even multiple)
         # These arguments will be Added BEFORE the /LINK block. (If /LINK is used at all)
         # Example: "/CGTHREADS:4 /INTEGRITYCHECK"
         [parameter(mandatory=$false)] [string]$CompilerArgs,
-
+        
         # Works in the same way as $CompilerArgs.
         # These parameters will be passed after the /LINK parameter.
         [parameter(mandatory=$false)] [string]$LinkerArgs
@@ -144,10 +139,12 @@ function New-Binary {
     {
         if (!(Test-Path $Source -ErrorAction SilentlyContinue)) {throw "No such file: $Source"}
         $AbsolutePathSource = (Resolve-Path $Source).Path
-        $SourceName = Split-Path $AbsolutePathSource -Leaf
-        $SourceDir = Split-Path $AbsolutePathSource -Parent
 
-        $CMD = "cl $SourceName"
+        $CMD = "cl `'$AbsolutePathSource`'"
+
+        if ($LinkerArgs) {
+            $SeperateLink = $true
+        }
 
         if ($Libraries) {
             foreach ($lib in $Libraries) {
@@ -160,7 +157,7 @@ function New-Binary {
         }
 
         if ($CreateDebugObjects) {
-            $CMD += ' -Zi'
+            $CMD += ' /Zi'
         }
 
         if ($Include) {
@@ -169,59 +166,39 @@ function New-Binary {
             }
         }
 
-        if (!$OutputFolder) {
-            $OutputFolder = $SourceDir
+        if ($ObjectName) {
+            $CMD += " /Fo `'$ObjectName`'"
         }
 
-        if (!(Test-Path $OutputFolder)) {
-            New-Item $OutputFolder -ItemType Directory -Force
-        }
+        if ($SeperateLink) {
+            $CMD += " /LINK"
 
-        $AbsoluteOutputPath = (Resolve-Path $OutputFolder).Path
-        $AbsoluteObjOutputPath = $AbsoluteOutputPath + "\" + ($ObjectFolderName.Replace("\","")) + "\"
-        $AbsoluteBinOutputPath = $AbsoluteOutputPath + "\" + ($BinaryFolderName.Replace("\","")) + "\"
+            if ($BinaryName) {
+                $CMD += " /OUT:`'$BinaryName`'"
+            }
 
-        if (!(Test-Path $AbsoluteObjOutputPath)) {
-            New-Item $AbsoluteObjOutputPath -ItemType Directory -Force
-        }
-
-        $CMD += " /Fo`"$AbsoluteObjOutputPath\`""
-
-        if ($CompilerArgs) {
-            $CMD += " $CompilerArgs"
-        }
-
-        # Linker args
-        $CMD += " /link"
-
-        if (!(Test-Path $AbsoluteBinOutputPath)) {
-            New-Item $AbsoluteBinOutputPath -ItemType Directory -Force
-        }
-
-        if (!$BinaryName) {
-            $BinaryName = [io.path]::GetFileNameWithoutExtension($SourceName)
             if ($DLL) {
-                $BinaryName += ".dll"
-            } else {
-                $BinaryName += ".exe"
+                $CMD += " /DLL"
+            }
+
+        } else {
+
+            if ($BinaryName) {
+                $CMD += " /Fe `'$BinaryName`'"
+            }
+
+            if ($DLL) {
+                $CMD += " /LD"
             }
         }
-
-        if ($DLL) {
-            $CMD += " /DLL"
-        }
-
-        $CMD += " /OUT:`"$AbsoluteBinOutputPath$BinaryName`""
 
         if ($LinkerArgs) {
             $CMD += " " + $LinkerArgs
         }
 
         # output created command
-        Push-Location -Path $SourceDir
-        Write-Verbose "Running the following command: $CMD"
+        Write-Verbose "Running the following command: `n$CMD"
         Invoke-Expression $CMD
-        Pop-Location
     }
 }
 
