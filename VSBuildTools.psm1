@@ -102,7 +102,7 @@ function Enable-VSBuildTools{
 function New-Binary {
     param(
         [cmdletbinding()]
-        [parameter(mandatory=$true, position=0)] [string]$Source,
+        [parameter(mandatory=$true, position=0)] [string[]]$SourceFiles,
 
         # Wrapper for /Fe option or the linkers /OUT param if linker option are use.
         # Accepts either a path or a name.
@@ -137,10 +137,13 @@ function New-Binary {
 
     process
     {
-        if (!(Test-Path $Source -ErrorAction SilentlyContinue)) {throw "No such file: $Source"}
-        $AbsolutePathSource = (Resolve-Path $Source).Path
+        $CMD = "cl"
 
-        $CMD = "cl `'$AbsolutePathSource`'"
+        foreach ($Source in $SourceFiles) {
+            if (!(Test-Path $Source -ErrorAction SilentlyContinue)) {throw "No such file: $Source"}
+            $AbsolutePathSource = (Resolve-Path $Source).Path
+            $CMD +=  " `'$AbsolutePathSource`'"
+        }
 
         if ($LinkerArgs) {
             $SeperateLink = $true
