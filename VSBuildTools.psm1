@@ -32,21 +32,39 @@ function Get-VisualStudio {
     return $VS
 }
 
-function Enable-VSBuildTools{
+function Enable-BuildTools{
     param(
         [parameter(mandatory=$false)]
         [ValidateSet('x86', 'amd64', 'arm', 'arm64')]
-        $OutputArchitecture,
+        [string]$OutputArchitecture,
 
         [parameter(mandatory=$false)]
         [ValidateSet('x86', 'amd64')]
-        $Compiler
+        [string]$Compiler,
+
+        # Path to your local installation (uses vswhere to find it, if omitted)
+        [parameter(mandatory=$false)]
+        [string]$Path
     )
 
     process
     {
-        $VS = Get-VisualStudio
-        $VCPath = $VS.installationPath + '\VC\Auxiliary\Build\'
+        if ($Path) {
+            $VCPath = $Path + '\VC\Auxiliary\Build\'
+        } else {
+            $VS = Get-VisualStudio
+            $VCPath = $VS.installationPath + '\VC\Auxiliary\Build\'
+        }
+
+        if (!$OutputArchitecture) {
+            if($Compiler) { $OutputArchitecture = $Compiler }
+        }
+
+        if (!$Compiler) {
+            $Compiler = $env:PROCESSOR_ARCHITECTURE
+            if (!$OutputArchitecture) { $OutputArchitecture = $Compiler }
+        }
+
         switch ($OutputArchitecture){
             'x86'{
                 if ($Compiler -eq 'amd64'){
@@ -80,17 +98,15 @@ function Enable-VSBuildTools{
                 }
                 break
             }
-            default {
-                switch ($Compiler){
-                    "x86" { }
-                    "amd64" { }
-                    default { $Bat = "vcvarsall.bat"; break }
-                }
-                break
-            }
         }
 
         Invoke-BatchFile -file ($VCPath + $Bat)
+
+        # only export Debug if it's a full VS installation
+        if ($VS.productId -ne "Microsoft.VisualStudio.Product.BuildTools") {
+            Export-ModuleMember -Cmdlet Debug-Binary
+        }
+        $script:BT_ENABLED = $true
     }
 }
 
@@ -134,6 +150,12 @@ function New-Binary {
         # These parameters will be passed after the /LINK parameter.
         [parameter(mandatory=$false)] [string]$LinkerArgs
     )
+
+    begin {
+        if (!$script:BT_ENABLED) {
+            Enable-BuildTools
+        }
+    }
 
     process
     {
@@ -215,9 +237,3 @@ function Debug-Binary {
         devenv $Path
     }
 }
-
-# Only export usefull functions
-Export-ModuleMember Get-VisualStudio
-Export-ModuleMember Enable-VSBuildTools
-Export-ModuleMember New-Binary
-Export-ModuleMember Debug-Binary
