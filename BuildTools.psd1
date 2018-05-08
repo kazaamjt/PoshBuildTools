@@ -10,7 +10,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'VSBuildTools.psm1'
+RootModule = 'BuildTools.psm1'
 
 # Version number of this module.
 ModuleVersion = '1.4'
@@ -25,7 +25,7 @@ GUID = '1da827c9-2189-47b9-bf4a-932ab187f1a4'
 Author = 'Yaron Vanhulst'
 
 # Copyright statement for this module
-Copyright = '(c) 2018 Yaron Vanhulst. All rights reserved.'
+Copyright = '(c)2017-2018 Yaron Vanhulst. All rights reserved.'
 
 # Description of the functionality provided by this module
 Description = 'Enables to compile and debug files from the PowerShell'
@@ -67,7 +67,7 @@ PowerShellVersion = '3.0'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @("Get-VisualStudio","New-Binary")
+FunctionsToExport = @("Get-VisualStudio","Enable-BuildTools","New-Binary")
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
