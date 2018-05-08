@@ -14,7 +14,7 @@ function Invoke-BatchFile ($file) {
 function Get-VisualStudio {
     $VS = New-Object -TypeName PSObject
 
-    $VSWHERE = . "$PSScriptRoot\VSWHERE.exe"
+    $VSWHERE = &"$PSScriptRoot\VSWHERE.exe" -products *
     $VSWHERE[0] = ''
     $VSWHERE[1] = ''
 
