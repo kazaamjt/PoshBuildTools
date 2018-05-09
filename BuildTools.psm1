@@ -195,6 +195,10 @@ function New-Binary {
             $CMD += " /Fo `'$ObjectName`'"
         }
 
+        if ($CompilerArgs) {
+            $CMD += " $CompilerArgs"
+        }
+
         if ($SeperateLink) {
             $CMD += " /LINK"
 
