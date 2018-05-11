@@ -30,6 +30,6 @@ Enable-BuildTools -Path '/Path/To/VisualStudio'
 
 TO DO
 -----
-*Add support for older version of Visual Studio
-*Complete the list of parameters for New-Binary to support all CL parameters
-*Add support for Csharp compilation (Planned for V2)
+*Add support for older version of Visual Studio  
+*Complete the list of parameters for New-Binary to support all CL parameters  
+*Add support for Csharp compilation (Planned for V2)  
