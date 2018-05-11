@@ -24,6 +24,12 @@ Then open a new PowerShell Session, it should automatically contain the new cmdl
   
 **NOTE:**  
 Upon running *New-Binary* it will import and execute vcvarsall.bat.  
-If this fails due to not finding your Visual Studio, or you are using a VSWHERE unsuported version,  
+If this fails due to not finding your Visual Studio, or you are probably using a version of visual studio unsuported by VSWHERE,  
 you can manualy enable the build tools by running:  
 Enable-BuildTools -Path '/Path/To/VisualStudio'  
+
+TO DO
+-----
+*Add support for older version of Visual Studio
+*Complete the list of parameters for New-Binary to support all CL parameters
+*Add support for Csharp compilation (Planned for V2)
