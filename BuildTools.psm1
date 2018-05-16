@@ -141,6 +141,10 @@ function New-Binary {
         [parameter(mandatory=$false)]
         [switch]$DLL,
 
+        # Currently not supportng compiler versions.
+        [ValidateSet('Disabled','0','1','2','3','4','All')]
+        $WarningLevel,
+
         # Args takes a string as argument, any cl parameter will work with this param. (Even multiple)
         # These arguments will be Added BEFORE the /LINK block. (If /LINK is used at all)
         # Example: "/CGTHREADS:4 /INTEGRITYCHECK"
@@ -194,6 +198,22 @@ function New-Binary {
         if ($ObjectName) {
             $CMD += " /Fo `'$ObjectName`'"
         }
+
+        switch ($WarningLevel) {
+            
+            (0 -or 'Disabled') { $CMD += " /W"}
+
+            1 { $CMD += " /W1" }
+            2 { $CMD += " /W2" }
+            3 { $CMD += " /W3" }
+            4 { $CMD += " /W4" }
+
+            'All' { $CMD += " /Wall" }
+            default {
+                break
+            }
+        }
+        
 
         if ($CompilerArgs) {
             $CMD += " $CompilerArgs"
