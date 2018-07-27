@@ -149,7 +149,7 @@ function New-Binary {
         # These arguments will be Added BEFORE the /LINK block. (If /LINK is used at all)
         # Example: "/CGTHREADS:4 /INTEGRITYCHECK"
         [parameter(mandatory=$false)] [string]$CompilerArgs,
-        
+
         # Works in the same way as $CompilerArgs.
         # These parameters will be passed after the /LINK parameter.
         [parameter(mandatory=$false)] [string]$LinkerArgs
@@ -191,7 +191,12 @@ function New-Binary {
 
         if ($Include) {
             foreach ($Dir in $Include) {
-                $CMD += " /I `"$Dir\`""
+				if ((Get-Item $Dir) -is [System.IO.DirectoryInfo]) {
+					if ($Dir.endswith('\\')) {}
+					elseif ($Dir.endswith('\')) { $Dir = $Dir + '\' }
+					else { $Dir = $Dir + '\\' }
+				}
+                $CMD += " /I `"$Dir`""
             }
         }
 
@@ -200,7 +205,6 @@ function New-Binary {
         }
 
         switch ($WarningLevel) {
-            
             (0 -or 'Disabled') { $CMD += " /W"}
 
             1 { $CMD += " /W1" }
@@ -213,7 +217,6 @@ function New-Binary {
                 break
             }
         }
-        
 
         if ($CompilerArgs) {
             $CMD += " $CompilerArgs"
