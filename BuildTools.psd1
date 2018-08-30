@@ -13,7 +13,7 @@
 RootModule = 'BuildTools.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.4'
+ModuleVersion = '1.5'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -28,7 +28,7 @@ Author = 'Yaron Vanhulst'
 Copyright = '(c)2017-2018 Yaron Vanhulst. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = 'Enables to compile and debug files from the PowerShell'
+Description = 'Enables to compilation and debugging files from the PowerShell commandline.'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '3.0'
@@ -90,24 +90,24 @@ AliasesToExport = @()
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 PrivateData = @{
 
-    PSData = @{
+	PSData = @{
 
-        # Tags applied to this module. These help with module discovery in online galleries.
-        # Tags = @()
+		# Tags applied to this module. These help with module discovery in online galleries.
+		# Tags = @()
 
-        # A URL to the license for this module.
-        # LicenseUri = ''
+		# A URL to the license for this module.
+		# LicenseUri = ''
 
-        # A URL to the main website for this project.
-        # ProjectUri = ''
+		# A URL to the main website for this project.
+		# ProjectUri = ''
 
-        # A URL to an icon representing this module.
-        # IconUri = ''
+		# A URL to an icon representing this module.
+		# IconUri = ''
 
-        # ReleaseNotes of this module
-        # ReleaseNotes = ''
+		# ReleaseNotes of this module
+		# ReleaseNotes = ''
 
-    } # End of PSData hashtable
+	} # End of PSData hashtable
 
 } # End of PrivateData hashtable
 
@@ -118,4 +118,3 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
-
