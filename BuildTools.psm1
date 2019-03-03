@@ -144,10 +144,15 @@ function Invoke-VCCompiler {
 		$Optimization,
 
 		# Wrapper for /Fe option or the linkers /OUT param if linker options are used.
-		# Accepts either a path or a name.
-		[string]$Output,
+		# The relative or absolute path and base file name,
+		# or relative or absolute path to a directory,
+		# or base file name to use for the generated executable.
+		[string]$ExecutableName,
 
-		# Wrapper for /Fo option, setting a path or naming the Objects.
+		# Changes the root where cl will output it's objects and binaries
+		[string]$OutputDirectory,
+
+		# Wrapper for /Fo option, setting a path or or naming the Objects
 		[string]$ObjectName,
 
 		# Wrapper for the /I parameter.
@@ -160,7 +165,7 @@ function Invoke-VCCompiler {
 		[switch]$CreateDebugObjects,
 
 		# Changes the target output platform
-		[ValidateSet('ARM','EBC','X64','X86')] $TargetPlatform,
+		[ValidateSet('ARM','EBC','X64','X86')]$TargetPlatform,
 
 		# Creates a DLL instead of an exe.
 		[switch]$DLL,
@@ -176,7 +181,7 @@ function Invoke-VCCompiler {
 
 		# Works in the same way as $CompilerArgs.
 		# These parameters will be passed after the /LINK parameter.
-		[parameter(mandatory=$false)] [string[]]$LinkerArgs
+		[string[]]$LinkerArgs
 	)
 
 	begin {
@@ -184,12 +189,22 @@ function Invoke-VCCompiler {
 	}
 
 	process {
+		# Check if all Source files are correct
+		Write-Debug "Checking all source files"
+		$Sources = @()
 		foreach ($Source in $SourceFiles) {
 			if (!(Test-Path $Source -ErrorAction SilentlyContinue)) {
 				throw "No such file: $Source"
+			} else {
+				$Sources += (Resolve-Path $Source).Path
 			}
 		}
-		$Params = @($SourceFiles, '/nologo')
+		# Check if linker arguments are superate
+		if ($LinkerArgs) {
+			$SeperateLinking = $true
+			$LinkParams = @()
+		}
+		$Params = @($Sources, '/nologo')
 
 		switch ($Optimization) {
 			{$_ -in 'Small', 'O1'} { $Params += '/O1'; break; }
@@ -197,6 +212,14 @@ function Invoke-VCCompiler {
 			{$_ -in 'Disabled', 'Od'} { $Params += '/Od'; break; }
 			{$_ -eq 'Ox'} { $Params += '/Ox'; break; }
 			Default {}
+		}
+
+		if ($ExecutableName) {
+			if ($SeperateLinking) {
+				$LinkParams += "/OUT:$ExecutableName"
+			} else {
+				$Params += "/Fe:$ExecutableName"
+			}
 		}
 
 		if ($TargetPlatform) {
@@ -221,8 +244,19 @@ function Invoke-VCCompiler {
 		}
 
 		if ($ObjectName) {
-			$Params += ("/Fo `'$ObjectName`'")
+			$Params += ("/Fo:$ObjectName")
+		}
+
+		if ($OutputDirectory) {
+			if (!(Test-Path $OutputDirectory -ErrorAction SilentlyContinue)) {
+				New-Item $OutputDirectory -ItemType Directory -Force | Out-Null
+			}
+			$CurrentDir = Get-Location
+			Set-Location $OutputDirectory
 		}
 		cl.exe $Params
+		if ($OutputDirectory) {
+			Set-Location $CurrentDir
+		}
 	}
 }
