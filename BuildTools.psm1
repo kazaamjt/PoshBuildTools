@@ -1,72 +1,62 @@
-# Function to enable cl.exe in PowerShell
-# Basicly turns all the environment variables from the CMD format to the PS "env:"-format.
-function Invoke-BatchFile ($file) {
-	$cmd = "`"$file`" & set"
-	cmd /c $cmd | Foreach-Object {
-		$p, $v = $_.split('=')
-		if($p -and $v){
-			Set-Item -path env:$p -value $v
-		}
-	}
-}
+# Script variables ############################################################
+$script:ENABLED = $false
 
-# Use VSWHERE to find VSVersion and return it's output as a PS object
-function Get-VisualStudio {
-	$VS = New-Object -TypeName PSObject
+###############################################################################
+<#
+.Synopsis
+	Sets up the environment for the use of the MS VS build tools (like vcvars*.bat)
 
-	$VSWHERE = &"$PSScriptRoot\VSWHERE.exe" -products *
-	$VSWHERE[0] = ''
-	$VSWHERE[1] = ''
+.DESCRIPTION
+	Sets up the environment for the use of the VisualStudio build tools
+	(in a similar way to the vcvars*.bat scripts)
+	You should only run this if you want to target different compiler or output targets
 
-	foreach ($Line in $VSWHERE){
-		if ($Line) {
-			$SplitLine = $Line.split(':')
-			if ($SplitLine[0] -eq 'installationPath'){
-				$SplitLine[1] += ':'
-				$SplitLine[1] += $SplitLine[2]
-			}
-			$VS | Add-Member -Name ($SplitLine[0].trim()) -MemberType Noteproperty -Value ($SplitLine[1].trim())
-		}
-	}
+.EXAMPLE
+	Enable-BuildToolsModule -OutputArchitecture amd64
 
-	return $VS
-}
+.NOTES
+	All cmdlets in this module will execute this cmdlet automatically if they require it
+	Will only set up the environment once, unless -Force is used
 
-function Enable-BuildTools {
-	param(
-		[parameter(mandatory=$false)]
+.COMPONENT
+	POSH-BuildTools
+#>
+function Enable-BuildToolsModule {
+	[CmdletBinding()]
+	param (
+		# Sets the default compiler output architexture to the indicated value
 		[ValidateSet('x86', 'amd64', 'arm', 'arm64')]
 		[string]$OutputArchitecture,
 
-		[parameter(mandatory=$false)]
+		# Sets the compiler version to the indicated value
 		[ValidateSet('x86', 'amd64')]
 		[string]$Compiler,
 
-		# Path to your local installation (uses vswhere to find it, if omitted)
-		[parameter(mandatory=$false)]
-		[string]$Path
+		# Path to your local installation (if omitted, VSWhere is invoked to find it)
+		[string]$VSPath,
+
+		# Forces a refresh of the PoshBuildTools
+		[switch]$Force
 	)
 
-	process
-	{
+	if (!$script:ENABLED -or $Force) {
 		if ($Path) {
-			$VCPath = $Path + '\VC\Auxiliary\Build\'
+			$VCPath = $VSPath + '\VC\Auxiliary\Build\'
 		} else {
-			$VS = Get-VisualStudio
+			$VS = &"$PSScriptRoot\VSWHERE.exe" -products * -format json | ConvertFrom-Json
 			$VCPath = $VS.installationPath + '\VC\Auxiliary\Build\'
+		}
+
+		if (!$Compiler) {
+			$Compiler = $env:PROCESSOR_ARCHITECTURE
 		}
 
 		if (!$OutputArchitecture) {
 			if($Compiler) { $OutputArchitecture = $Compiler }
 		}
 
-		if (!$Compiler) {
-			$Compiler = $env:PROCESSOR_ARCHITECTURE
-			if (!$OutputArchitecture) { $OutputArchitecture = $Compiler }
-		}
-
 		switch ($OutputArchitecture){
-			'x86'{
+			'x86' {
 				if ($Compiler -eq 'amd64'){
 					$Bat = "vcvarsamd64_x86.bat"
 				} else {
@@ -74,7 +64,8 @@ function Enable-BuildTools {
 				}
 				break
 			}
-			'amd64'{
+
+			'amd64' {
 				if ($Compiler -eq 'amd64'){
 					$Bat = "vcvars64.bat"
 				} else {
@@ -82,7 +73,8 @@ function Enable-BuildTools {
 				}
 				break
 			}
-			'arm'{
+
+			'arm' {
 				if ($Compiler -eq 'amd64'){
 					$Bat = "vcvarsamd64_arm.bat"
 				} else {
@@ -90,7 +82,8 @@ function Enable-BuildTools {
 				}
 				break
 			}
-			'arm64'{
+
+			'arm64' {
 				if ($Compiler -eq 'amd64'){
 					$Bat = "vcvarsamd64_arm64.bat"
 				} else {
@@ -100,169 +93,120 @@ function Enable-BuildTools {
 			}
 		}
 
-		Invoke-BatchFile -file ($VCPath + $Bat)
-
-		# only export Debug if it's a full VS installation
-		if ($VS.productId -ne "Microsoft.VisualStudio.Product.BuildTools") {
-			Export-ModuleMember -Cmdlet Debug-Binary
-		}
+		InvokeVCvarsFile -file ($VCPath + $Bat)
 		$script:BT_ENABLED = $true
+	}
+}
+
+# Executes a VCvarsScript
+function InvokeVCvarsFile($file) {
+	$cmd = "`"$file`" & set"
+	cmd /c $cmd | Foreach-Object {
+		$p, $v = $_.split('=')
+		if($p -and $v){
+			Set-Item -path env:$p -value $v
+		}
 	}
 }
 
 <#
 .Synopsis
-	Compiles a C or visual C++ file using cl.exe.
-	Linking functionality now included!
+	Short description
+.DESCRIPTION
+	Long description
+.EXAMPLE
+	Example of how to use this cmdlet
+.EXAMPLE
+	Another example of how to use this cmdlet
+.INPUTS
+	Inputs to this cmdlet (if any)
+.OUTPUTS
+	Output from this cmdlet (if any)
+.NOTES
+	General notes
+.COMPONENT
+	The component this cmdlet belongs to
+.ROLE
+	The role this cmdlet belongs to
+.FUNCTIONALITY
+	The functionality that best describes this cmdlet
 #>
-function New-Binary {
-	param (
-		[cmdletbinding()]
+function Invoke-VCCompiler {
+	[cmdletbinding()]
+	param(
 		[parameter(mandatory=$true, position=0)] [string[]]$SourceFiles,
 
-		# Wrapper for /Fe option or the linkers /OUT param if linker option are use.
+		# Wrapper for /Fe option or the linkers /OUT param if linker options are used.
 		# Accepts either a path or a name.
-		[parameter(mandatory=$false)] [string]$BinaryName,
+		[string]$Output,
 
 		# Wrapper for /Fo option, setting a path or naming the Objects.
-		[parameter(mandatory=$false)] [string]$ObjectName,
+		[string]$ObjectName,
 
-		# Takes a list of strings as input. Wrapper for the /I cl-parameter.
-		[parameter(mandatory=$false)] [string[]]$Include,
+		# Takes a list of strings as input. Wrapper for the /I parameter.
+		[string[]]$Include,
 
 		# Takes a list of .lib files.
-		[parameter(mandatory=$false)] [string[]]$Libraries,
-		[switch] $CreateDebugObjects,
+		[string[]]$Libraries,
 
-		[parameter(mandatory=$false)]
+		[switch]$CreateDebugObjects,
+
+		# Changes the target output platform
 		[ValidateSet('ARM','EBC','X64','X86')] $TargetPlatform,
 
-		# Makes a DLL instead of an exe.
-		[parameter(mandatory=$false)]
+		# Creates a DLL instead of an exe.
 		[switch]$DLL,
 
 		# Currently not supportng compiler versions.
 		[ValidateSet('Disabled','0','1','2','3','4','All')]
 		$WarningLevel,
 
-		# Args takes a string as argument, any cl parameter will work with this param. (Even multiple)
+		# Args takes a list of strings as argument, any cl parameter *should* work with this param.
 		# These arguments will be Added BEFORE the /LINK block. (If /LINK is used at all)
-		# Example: "/CGTHREADS:4 /INTEGRITYCHECK"
-		[parameter(mandatory=$false)] [string]$CompilerArgs,
+		# Example: "/CGTHREADS:4", "/INTEGRITYCHECK"
+		[string[]]$CompilerArgs,
 
 		# Works in the same way as $CompilerArgs.
 		# These parameters will be passed after the /LINK parameter.
-		[parameter(mandatory=$false)] [string]$LinkerArgs
+		[parameter(mandatory=$false)] [string[]]$LinkerArgs
 	)
 
 	begin {
-		if (!$script:BT_ENABLED) {
-			Enable-BuildTools
-		}
+		Enable-BuildToolsModule
 	}
 
 	process {
-		$CMD = "cl"
-
 		foreach ($Source in $SourceFiles) {
-			if (!(Test-Path $Source -ErrorAction SilentlyContinue)) {throw "No such file: $Source"}
-			$AbsolutePathSource = (Resolve-Path $Source).Path
-			$CMD += " `'$AbsolutePathSource`'"
-		}
-
-		if ($LinkerArgs) {
-			$SeperateLink = $true
-		}
-
-		if ($Libraries -and !($SeperateLink)) {
-			foreach ($lib in $Libraries) {
-				$CMD += " `"$lib`""
+			if (!(Test-Path $Source -ErrorAction SilentlyContinue)) {
+				throw "No such file: $Source"
 			}
 		}
 
+		$Params = @($SourceFiles, '/nologo')
 		if ($TargetPlatform) {
-			$CMD += " /MACHINE:$TargetPlatform"
+			$Params += ("/MACHINE:$TargetPlatform")
 		}
 
 		if ($CreateDebugObjects) {
-			$CMD += ' /Zi'
+			$Params += ('/Zi')
 		}
 
 		if ($Include) {
 			foreach ($Dir in $Include) {
 				if ((Get-Item $Dir) -is [System.IO.DirectoryInfo]) {
 					if ($Dir.endswith('\\')) {}
-					elseif ($Dir.endswith('\')) { $Dir = $Dir + '\' }
-					else { $Dir = $Dir + '\\' }
+					elseif ($Dir.endswith('\')) { $Dir += '\' }
+					else { $Dir += '\\' }
+					$Params += ("/I $Dir")
+				} else {
+					throw "Could not include: $Dir (invalid path)"
 				}
-				$CMD += " /I `"$Dir`""
 			}
 		}
 
 		if ($ObjectName) {
-			$CMD += " /Fo `'$ObjectName`'"
+			$Params += ("/Fo `'$ObjectName`'")
 		}
-
-		switch ($WarningLevel) {
-			(0 -or 'Disabled') { $CMD += " /W"}
-
-			1 { $CMD += " /W1" }
-			2 { $CMD += " /W2" }
-			3 { $CMD += " /W3" }
-			4 { $CMD += " /W4" }
-
-			'All' { $CMD += " /Wall" }
-			default {
-				break
-			}
-		}
-
-		if ($CompilerArgs) {
-			$CMD += " $CompilerArgs"
-		}
-
-		if ($SeperateLink) {
-			$CMD += " /link"
-
-			if ($Libraries) {
-				foreach ($lib in $Libraries) {
-					$CMD += " `"$lib`""
-				}
-			}
-
-			if ($BinaryName) {
-				$CMD += " /OUT:`'$BinaryName`'"
-			}
-
-			if ($DLL) {
-				$CMD += " /DLL"
-			}
-		} else {
-			if ($BinaryName) {
-				$CMD += " /Fe `'$BinaryName`'"
-			}
-
-			if ($DLL) {
-				$CMD += " /LD"
-			}
-		}
-
-		if ($LinkerArgs) {
-			$CMD += " " + $LinkerArgs
-		}
-
-		# output created command
-		Write-Verbose "Running the following command: `n$CMD"
-		Invoke-Expression $CMD
-	}
-}
-
-function Debug-Binary {
-	param(
-		[parameter(mandatory=$true)] $Path
-	)
-
-	process {
-		devenv $Path
+		cl.exe $Params
 	}
 }
