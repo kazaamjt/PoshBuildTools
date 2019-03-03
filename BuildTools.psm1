@@ -136,6 +136,13 @@ function Invoke-VCCompiler {
 	param(
 		[parameter(mandatory=$true, position=0)] [string[]]$SourceFiles,
 
+		# Sets the optimization level:
+		# - Small or O1: favor smaller executables and libraries
+		# - Fast or O2: favor faster code, with a possible larger footprint
+		# - Disabled and Od: Disable optimizations
+		[ValidateSet('Small', 'Fast', 'Disabled', 'O1', 'O2', 'Ox', 'Od')]
+		$Optimization,
+
 		# Wrapper for /Fe option or the linkers /OUT param if linker options are used.
 		# Accepts either a path or a name.
 		[string]$Output,
@@ -143,12 +150,13 @@ function Invoke-VCCompiler {
 		# Wrapper for /Fo option, setting a path or naming the Objects.
 		[string]$ObjectName,
 
-		# Takes a list of strings as input. Wrapper for the /I parameter.
+		# Wrapper for the /I parameter.
 		[string[]]$Include,
 
 		# Takes a list of .lib files.
 		[string[]]$Libraries,
 
+		# Wether or not debug objects should be created.
 		[switch]$CreateDebugObjects,
 
 		# Changes the target output platform
@@ -181,8 +189,16 @@ function Invoke-VCCompiler {
 				throw "No such file: $Source"
 			}
 		}
-
 		$Params = @($SourceFiles, '/nologo')
+
+		switch ($Optimization) {
+			{$_ -in 'Small', 'O1'} { $Params += '/O1'; break; }
+			{$_ -in 'Fast', 'O2'} { $Params += '/O2'; break; }
+			{$_ -in 'Disabled', 'Od'} { $Params += '/Od'; break; }
+			{$_ -eq 'Ox'} { $Params += '/Ox'; break; }
+			Default {}
+		}
+
 		if ($TargetPlatform) {
 			$Params += ("/MACHINE:$TargetPlatform")
 		}
@@ -199,7 +215,7 @@ function Invoke-VCCompiler {
 					else { $Dir += '\\' }
 					$Params += ("/I $Dir")
 				} else {
-					throw "Could not include: $Dir (invalid path)"
+					throw "Could not include, no such directory: $Dir"
 				}
 			}
 		}

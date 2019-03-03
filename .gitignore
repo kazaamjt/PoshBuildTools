@@ -1,2 +1,3 @@
 # Ignore generated EXEs and VSWhere
 *.exe
+*.obj
